@@ -1,11 +1,8 @@
 import os
-import platform
 
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor, QPalette
 from PySide6.QtWidgets import QApplication
-
-IS_WINDOWS = platform.system() == "Windows"
 
 # Lets reviewers whose OS never reports dark still see the dark theme, by pretending it did.
 OT_FORCE_DARK = os.environ.get("OT_FORCE_DARK") == "1"
@@ -17,9 +14,6 @@ _BASE_STYLESHEET = """
     QCheckBox::indicator {
         width: 16px;
         height: 16px;
-    }
-    QProgressBar {
-        background-color: #c8c8c8;
     }
     QToolButton {
         padding-top: 0px;
@@ -35,16 +29,24 @@ _BASE_STYLESHEET = """
     }
 """
 
+# grey-on-dark is unreadable (see #1488 review discussion); only apply the grey progress bar in light mode.
+_LIGHT_STYLESHEET = """
+    QProgressBar {
+        background-color: #c8c8c8;
+    }
+"""
+
 def apply_theme(app: QApplication) -> None:
-    is_dark =  app.palette().color(QPalette.ColorRole.Window).lightness() < 128
-    palette = app.palette()
     if OT_FORCE_DARK:
         app.styleHints().setColorScheme(Qt.ColorScheme.Dark)
-        palette = app.palette()
-    elif not IS_WINDOWS or not is_dark:
+        is_dark = True
+    else:
+        is_dark = app.styleHints().colorScheme() == Qt.ColorScheme.Dark
+
+    palette = app.palette()
+    if not is_dark:
         app.styleHints().setColorScheme(Qt.ColorScheme.Light)
-        palette = app.palette()
         palette.setColor(QPalette.ColorRole.Base, QColor("white"))
         palette.setColor(QPalette.ColorGroup.Disabled, QPalette.ColorRole.Base, QColor("#e0e0e0"))
     app.setPalette(palette)
-    app.setStyleSheet(_BASE_STYLESHEET)
+    app.setStyleSheet(_BASE_STYLESHEET if is_dark else _BASE_STYLESHEET + _LIGHT_STYLESHEET)
