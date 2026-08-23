@@ -29,7 +29,6 @@ _BASE_STYLESHEET = """
     }
 """
 
-# grey-on-dark is unreadable (see #1488 review discussion); only apply the grey progress bar in light mode.
 _LIGHT_STYLESHEET = """
     QProgressBar {
         background-color: #c8c8c8;
